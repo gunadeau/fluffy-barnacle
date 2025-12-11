@@ -7,6 +7,10 @@ on:
         description: 'Dry Run Mode (true/false)'
         required: true
         default: 'true'
+      targetHour:
+        description: 'Heure cible (ex: 18)'
+        required: true
+        default: '18'
 
 jobs:
   book:
@@ -28,7 +32,7 @@ jobs:
         env:
           # Si déclenché manuellement, utilise l'input. Sinon, 'false' (Mode Réel).
           DRY_RUN: ${{ inputs.dryRun || 'false' }}
-          TARGET_HOUR: 18
+          TARGET_HOUR: ${{ inputs.targetHour || '18' }}
           # Secrets mapping
           USER_FIRST_NAME: ${{ secrets.USER_FIRST_NAME }}
           USER_LAST_NAME: ${{ secrets.USER_LAST_NAME }}
