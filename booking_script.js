@@ -253,7 +253,13 @@ const CONFIG = {
     console.error('❌ Erreur générale:', error);
     await page.screenshot({ path: 'error_final.png' });
   } finally {
-    if (!CONFIG.dryRun) await browser.close();
-    else console.log('Navigateur laissé ouvert pour inspection.');
+    // En mode réel (pas dryRun) OU en environnement CI (GitHub Actions), on ferme toujours le navigateur.
+    // On ne le laisse ouvert que si on est en DRY-RUN LOCAL pour inspection.
+    if (!CONFIG.dryRun || process.env.CI) {
+      console.log('Fermeture du navigateur.');
+      await browser.close();
+    } else {
+      console.log('Navigateur laissé ouvert pour inspection (Local DryRun).');
+    }
   }
 })();
