@@ -21,7 +21,8 @@ const CONFIG = {
   console.log('🚀 Démarrage du script de réservation Booxi...');
   if (CONFIG.dryRun) console.log('⚠️ MODE DRY-RUN ACTIVÉ : Aucune réservation ne sera soumise.');
 
-  const browser = await chromium.launch({ headless: false });
+  // Sur GitHub Actions (CI), on doit être en headless. En local, on veut voir le navigateur (headless: false).
+  const browser = await chromium.launch({ headless: !!process.env.CI });
   const context = await browser.newContext();
   const page = await context.newPage();
 
