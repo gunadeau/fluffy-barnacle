@@ -35,3 +35,11 @@ jobs:
           USER_PHONE: ${{ secrets.USER_PHONE }}
           USER_EMAIL: ${{ secrets.USER_EMAIL }}
         run: node booking_script.js
+        
+      - name: Upload Screenshots
+        if: always() # Toujours exécuter, même si le script échoue
+        uses: actions/upload-artifact@v4
+        with:
+          name: booking-screenshots
+          path: '*.png'
+          retention-days: 5

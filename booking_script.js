@@ -215,6 +215,14 @@ const CONFIG = {
     // Petite pause pour laisser le JS du site digérer
     await page.waitForTimeout(1000);
 
+    // --- PREUVE PHOTO (Screenshot) ---
+    const now = new Date();
+    // Format YYYY-MM-DD_HH-mm
+    const dateStr = now.toISOString().split('T')[0] + '_' + now.toTimeString().split(' ')[0].replace(/:/g, '-').slice(0, 5);
+    const screenshotName = `booking_proof_${dateStr}.png`;
+    console.log(`📸 Prise de photo de preuve : ${screenshotName}`);
+    await page.screenshot({ path: screenshotName, fullPage: true });
+
     if (CONFIG.dryRun) {
       console.log('⚠️ DRY-RUN: Fin. (Injection effectuée)');
       const confirmBtn = page.locator('#_bn_bt_next');
@@ -231,9 +239,11 @@ const CONFIG = {
       const errorMsg = page.locator('[bx_lang="cancel_policy_check_err"]');
       if (await errorMsg.isVisible()) {
         console.error('❌ ÉCHEC : Le site refuse toujours malgré le hack JS.');
-        await page.screenshot({ path: 'failure_hack_js.png' });
+        await page.screenshot({ path: `failure_hack_js_${dateStr}.png` });
       } else {
         console.log('✅ SUCCÈS : Injection JS réussie ! Réservation soumise.');
+        // Photo finale après succès optionnelle
+        await page.screenshot({ path: `success_final_${dateStr}.png` });
       }
     }
   } catch (error) {
