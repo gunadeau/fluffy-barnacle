@@ -11,10 +11,7 @@ const CONFIG = {
     firstName: process.env.USER_FIRST_NAME || 'Guillaume',
     lastName: process.env.USER_LAST_NAME || 'Nadeau',
     phone: process.env.USER_PHONE || '418-473-8191',
-    email: process.env.USER_EMAIL || 'gunadeau@hotmail.com',
-    address: process.env.USER_ADDRESS || '123 Rue Principale',
-    city: process.env.USER_CITY || 'Québec',
-    zipCode: process.env.USER_ZIP || 'G1G 1G1'
+    email: process.env.USER_EMAIL || 'gunadeau@hotmail.com'
   },
   // Si DRY_RUN est défini à 'false', on passe en mode réel. Sinon, par défaut true (sécurité).
   dryRun: process.env.DRY_RUN === 'false' ? false : true
