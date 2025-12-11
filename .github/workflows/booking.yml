@@ -1,0 +1,38 @@
+name: Booxi Booking
+
+on:
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: 'Dry Run Mode (true/false)'
+        required: true
+        default: 'true'
+  schedule:
+    # Rappel : GitHub Actions utilise UTC.
+    # 17:55 UTC = 12:55 EST (Hiver) / 13:55 EDT (Été)
+    # Ajustez selon votre besoin. Pour 18h QC, il faudrait ~22h ou 23h UTC.
+    # Ex: '55 22 * * 4' pour Jeudi à 22h55 UTC (environ 17h55 heure QC)
+    - cron: '55 22 * * 4'
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium --with-deps
+        
+      - name: Run Booking Script
+        env:
+          # Si déclenché manuellement, utilise l'input. Sinon (cron), 'false' (Mode Réel).
+          DRY_RUN: ${{ inputs.dryRun || 'false' }}
+          TARGET_HOUR: 18
+        run: node booking_script.js

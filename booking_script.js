@@ -5,7 +5,7 @@ const CONFIG = {
   url: 'https://site.booxi.com/academiebaseballl31?lang=fre',
   targetService: 'COURS PRIVÉ SOLO (avec coach Eddie)',
   targetDayOfWeek: 4, // 0=Dim, 1=Lun, ..., 4=Jeudi, ...
-  targetHour: 18,     // 18h (Cible finale)
+  targetHour: process.env.TARGET_HOUR ? parseInt(process.env.TARGET_HOUR) : 18,     // 18h par défaut
   targetMinute: 0,
   user: {
     firstName: 'Guillaume',
@@ -16,7 +16,8 @@ const CONFIG = {
     city: 'Québec',
     zipCode: 'G1G 1G1'
   },
-  dryRun: true // ⚠️ MODE DRY-RUN ACTIVÉ ⚠️
+  // Si DRY_RUN est défini à 'false', on passe en mode réel. Sinon, par défaut true (sécurité).
+  dryRun: process.env.DRY_RUN === 'false' ? false : true
 };
 
 (async () => {
