@@ -7,12 +7,6 @@ on:
         description: 'Dry Run Mode (true/false)'
         required: true
         default: 'true'
-  schedule:
-    # Rappel : GitHub Actions utilise UTC.
-    # 17:55 UTC = 12:55 EST (Hiver) / 13:55 EDT (Été)
-    # Ajustez selon votre besoin. Pour 18h QC, il faudrait ~22h ou 23h UTC.
-    # Ex: '55 22 * * 4' pour Jeudi à 22h55 UTC (environ 17h55 heure QC)
-    - cron: '55 22 * * 4'
 
 jobs:
   book:
@@ -32,7 +26,15 @@ jobs:
         
       - name: Run Booking Script
         env:
-          # Si déclenché manuellement, utilise l'input. Sinon (cron), 'false' (Mode Réel).
+          # Si déclenché manuellement, utilise l'input. Sinon, 'false' (Mode Réel).
           DRY_RUN: ${{ inputs.dryRun || 'false' }}
           TARGET_HOUR: 18
+          # Secrets mapping
+          USER_FIRST_NAME: ${{ secrets.USER_FIRST_NAME }}
+          USER_LAST_NAME: ${{ secrets.USER_LAST_NAME }}
+          USER_PHONE: ${{ secrets.USER_PHONE }}
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+          USER_ADDRESS: ${{ secrets.USER_ADDRESS }}
+          USER_CITY: ${{ secrets.USER_CITY }}
+          USER_ZIP: ${{ secrets.USER_ZIP }}
         run: node booking_script.js
