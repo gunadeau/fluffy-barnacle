@@ -1,0 +1,16 @@
+{
+  "name": "booxi-automation",
+  "version": "1.0.0",
+  "description": "Script d'automatisation pour réservation Booxi",
+  "main": "booking_script.js",
+  "scripts": {
+    "start": "node booking_script.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Guillaume Nadeau",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
