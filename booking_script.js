@@ -118,8 +118,10 @@ const CONFIG = {
 
     if (!slotFound) {
       console.log('\n❌ Aucune disponibilité trouvée.');
-      if (!CONFIG.dryRun) await browser.close();
-      return;
+      // En CI ou dryRun, on ferme proprement pour ne pas laisser de zombie
+      if (!CONFIG.dryRun || process.env.CI) await browser.close();
+      console.log('Sortie succés (0) pour ne pas casser le pipeline CI.');
+      process.exit(0);
     }
 
     // 4. Formulaire
