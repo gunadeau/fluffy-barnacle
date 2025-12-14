@@ -1,0 +1,36 @@
+# Walkthrough - Automatisation Réservation Booxi
+
+## 🎯 Objectif Atteint
+Le script Node.js/Playwright est désormais capable de :
+
+*   Naviguer vers la page de réservation.
+*   Sélectionner le service "COURS PRIVÉ SOLO".
+*   Scanner le calendrier pour trouver le prochain Jeudi à l'heure demandée.
+*   Remplir automatiquement le formulaire client.
+*   Contourner la validation de la politique de confidentialité (Injection JS).
+*   Confirmer la réservation avec succès.
+*   Prendre une photo de preuve (avant et après).
+
+## 🤖 Automatisation (GitHub Actions)
+Le script est hébergé sur GitHub.
+
+### Lancement Manuel (Actions)
+Vous pouvez lancer le script n'importe quand depuis GitHub :
+
+1.  Allez sur votre dépôt : [https://github.com/gunadeau/fluffy-barnacle/actions](https://github.com/gunadeau/fluffy-barnacle/actions)
+2.  Cliquez sur **Booxi Booking**.
+3.  Cliquez sur **Run workflow**.
+4.  Remplissez les options :
+    *   **Dry Run Mode** : `true` (Test) ou `false` (Réel).
+    *   **Heure cible** : `18` (Défaut), `17`, `19`, etc.
+5.  Cliquez sur le bouton vert **Run workflow**.
+
+### Récupérer les Preuves (Photos)
+Après l'exécution du script par GitHub :
+
+1.  Cliquez sur le "Run" (l'exécution) dans la liste.
+2.  En bas de page, section **Artifacts**.
+3.  Cliquez sur `booking-screenshots` pour télécharger le ZIP des photos.
+
+## 🔐 Configuration (Secrets)
+Secrets configurés : `USER_FIRST_NAME`, `USER_LAST_NAME`, `USER_EMAIL`, `USER_PHONE`.
