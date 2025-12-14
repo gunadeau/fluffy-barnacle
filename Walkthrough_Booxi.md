@@ -23,6 +23,7 @@ Vous pouvez lancer le script n'importe quand depuis GitHub :
 4.  Remplissez les options :
     *   **Dry Run Mode** : `true` (Test) ou `false` (Réel).
     *   **Heure cible** : `18` (Défaut), `17`, `19`, etc.
+    *   **Jour cible** : `4` (Défaut = Jeudi). 0=Dim, 1=Lun, 2=Mar, 3=Mer, 5=Ven, 6=Sam.
 5.  Cliquez sur le bouton vert **Run workflow**.
 
 ### Récupérer les Preuves (Photos)

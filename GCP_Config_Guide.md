@@ -25,7 +25,8 @@ Copiez ce JSON tel quel :
   "ref": "main",
   "inputs": {
     "targetHour": "18",
-    "dryRun": "false"
+    "dryRun": "false",
+    "targetDay": "4"
   }
 }
 ```

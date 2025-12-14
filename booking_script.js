@@ -4,7 +4,7 @@ const fs = require('fs');
 const CONFIG = {
   url: 'https://site.booxi.com/academiebaseballl31?lang=fre',
   targetService: 'COURS PRIVÉ SOLO (avec coach Eddie)',
-  targetDayOfWeek: 4, // 0=Dim, 1=Lun, ..., 4=Jeudi, ...
+  targetDayOfWeek: process.env.TARGET_DAY ? parseInt(process.env.TARGET_DAY) : 4, // 0=Dim, 1=Lun, ..., 4=Jeudi, ...
   targetHour: process.env.TARGET_HOUR ? parseInt(process.env.TARGET_HOUR) : 18,     // 18h par défaut
   targetMinute: 0,
   user: {
