@@ -1,1 +1,57 @@
+name: Booxi Booking
 
+on:
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: 'Dry Run Mode (true/false)'
+        required: true
+        default: 'true'
+      targetHour:
+        description: 'Heure cible (ex: 18)'
+        required: true
+        default: '18'
+      targetDay:
+        description: 'Jour cible (0=Dim...4=Jeu...)'
+        required: true
+        default: '4'
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Wait for 30 seconds
+        run: sleep 40    
+      
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium --with-deps
+        
+      - name: Run Booking Script
+        env:
+          # Si déclenché manuellement, utilise l'input. Sinon, 'false' (Mode Réel).
+          DRY_RUN: ${{ inputs.dryRun || 'false' }}
+          TARGET_HOUR: ${{ inputs.targetHour || '18' }}
+          TARGET_DAY: ${{ inputs.targetDay || '4' }}
+          # Secrets mapping
+          USER_FIRST_NAME: ${{ secrets.USER_FIRST_NAME }}
+          USER_LAST_NAME: ${{ secrets.USER_LAST_NAME }}
+          USER_PHONE: ${{ secrets.USER_PHONE }}
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+        run: node booking_script.js
+        
+      - name: Upload Screenshots
+        if: always() # Toujours exécuter, même si le script échoue
+        uses: actions/upload-artifact@v4
+        with:
+          name: booking-screenshots
+          path: '*.png'
+          retention-days: 5
