@@ -1,4 +1,4 @@
-name: Booxi Booking
+name: Booxi Booking 2
 
 on:
   workflow_dispatch:
