@@ -255,8 +255,15 @@ const CONFIG = {
     await page.screenshot({ path: screenshotName, fullPage: true });
 
     console.log('Passage à la page de confirmation / paiement...');
-    const confirmBtn = page.locator('#_bn_bt_next');
-    if (await confirmBtn.isVisible()) await confirmBtn.click();
+    // L'ID du bouton a peut-être changé, ciblage large du texte "Confirmer"
+    const confirmBtn = page.locator('#_bn_bt_next, button:has-text("Confirmer"), .uie_button:has-text("Confirmer")').first();
+    if (await confirmBtn.isVisible()) {
+        console.log('Bouton Confirmer trouvé, clic...');
+        await confirmBtn.click();
+    } else {
+        console.log('⚠️ Bouton Confirmer introuvable. Essai de forçage...');
+        try { await page.getByText(/Confirmer/i).click(); } catch(e) { console.log(e.message); }
+    }
 
     // Attente post-clic pour voir si erreur ou succès
     await page.waitForTimeout(4000);
