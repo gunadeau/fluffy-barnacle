@@ -372,8 +372,8 @@ const CONFIG = {
          
          try {
              // On s'assure de chercher spécifiquement le bouton noir "Payer" (Payer XXX $) généré par Square!
-             // On exclut le bouton "Terminé" de la fenêtre d'arrière-plan.
-             const termineBtn = page.locator('#sq-pay-button, button:has-text("Payer")').filter({ state: 'visible' }).first();
+             // L'ID #sq-pay-button est unique et évite les conflits avec les boutons cachés de Booxi (ex: bx_btn_payment)
+             const termineBtn = page.locator('#sq-pay-button');
              await termineBtn.waitFor({ state: 'visible', timeout: 5000 });
              
              console.log('✅ Bouton de paiement (Payer) trouvé ! Tentative de clic...');
