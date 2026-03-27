@@ -39,5 +39,8 @@ Secrets obligatoires : `USER_FIRST_NAME`, `USER_LAST_NAME`, `USER_EMAIL`, `USER_
 **Nouveaux secrets (Paiement Booxi/Square) :**
 *   `USER_CC_NUMBER` : Numéro de la carte de crédit
 *   `USER_CC_EXPIRY` : Date d'expiration (format MM/AA)
-*   `USER_CC_CVV` : Code de sécurité (3 chiffres)
-**Secrets optionnels (Facturation) :** `USER_ADDRESS`, `USER_CITY`, `USER_STATE`.
+*   `USER_CC_CVV`: Le code de sécurité (ex: 123).
+*   `USER_POSTAL_CODE`: Le code postal pour les cartes qui l'exigent dynamiquement (ex: G7A 1R6).
+**Secrets optionnels (Facturation) :**
+*   `USER_ADDRESS`: Votre adresse de facturation (ex: 123 Rue de la Paix).
+*   `USER_CITY`, `USER_STATE`.

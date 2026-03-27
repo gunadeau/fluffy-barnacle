@@ -15,6 +15,7 @@ const CONFIG = {
     ccNumber: process.env.USER_CC_NUMBER || '4242424242424242',
     ccExpiry: process.env.USER_CC_EXPIRY || '12/26',
     ccCvv: process.env.USER_CC_CVV || '123',
+    postalCode: process.env.USER_POSTAL_CODE || 'G7A 1R6',
     address: process.env.USER_ADDRESS || '123 Rue Principale',
     city: process.env.USER_CITY || 'Quebec',
     state: process.env.USER_STATE || 'QC'
