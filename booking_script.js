@@ -393,7 +393,8 @@ const CONFIG = {
              const termineBtn = page.locator('#sq-pay-button');
              await termineBtn.waitFor({ state: 'visible', timeout: 5000 });
              
-             console.log('✅ Bouton de paiement (Payer) trouvé ! Tentative de clic...');
+             console.log('✅ Bouton de paiement (Payer) trouvé ! Courte attente avant le clic...');
+             await page.waitForTimeout(1000);
              await termineBtn.click({ timeout: 5000 });
              
              console.log('Attente de la confirmation Square...');
