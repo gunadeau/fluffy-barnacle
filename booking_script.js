@@ -4,8 +4,8 @@ const fs = require('fs');
 const CONFIG = {
   url: 'https://site.booxi.com/academiebaseballl31?lang=fre',
   targetService: 'COURS PRIVÉ SOLO (avec coach Eddie)',
-  targetDayOfWeek: process.env.TARGET_DAY ? parseInt(process.env.TARGET_DAY) : 4, // 0=Dim, 1=Lun, ..., 4=Jeudi, ...
-  targetHour: process.env.TARGET_HOUR ? parseInt(process.env.TARGET_HOUR) : 18,     // 18h par défaut
+  targetDayOfWeek: process.env.TARGET_DAY ? parseInt(process.env.TARGET_DAY) : 6, // 6 = Samedi
+  targetHour: process.env.TARGET_HOUR ? parseInt(process.env.TARGET_HOUR) : 9,    // 9h00 par défaut
   targetMinute: 0,
   user: {
     firstName: process.env.USER_FIRST_NAME || 'Guillaume',
@@ -60,18 +60,18 @@ const CONFIG = {
     console.log(`Recherche du service : ${CONFIG.targetService}...`);
     // On peut avoir besoin de cibler un élément plus profond ou général si la classe a changé
     const serviceLocator = page.locator('.uie_vListItem, .bnx_svc_list_item', { hasText: CONFIG.targetService }).first();
-    
+
     // Attendre que le service apparaisse potentiellement (si l'API charge des données)
     try {
       await serviceLocator.waitFor({ state: 'visible', timeout: 5000 });
-    } catch(e) {
+    } catch (e) {
       // Ignorer l'erreur de timeout ici pour laisser le throw classique faire son travail
     }
 
     if (await serviceLocator.count() === 0 || !(await serviceLocator.isVisible())) {
-       // Si on ne trouve toujours pas, on fait un screenshot pour débugger
-       await page.screenshot({ path: 'erreur_service_introuvable.png' });
-       throw new Error(`Service "${CONFIG.targetService}" introuvable ou invisible. Vérifiez si la catégorie est correcte.`);
+      // Si on ne trouve toujours pas, on fait un screenshot pour débugger
+      await page.screenshot({ path: 'erreur_service_introuvable.png' });
+      throw new Error(`Service "${CONFIG.targetService}" introuvable ou invisible. Vérifiez si la catégorie est correcte.`);
     }
     await serviceLocator.click();
     console.log('Service sélectionné.');
@@ -259,11 +259,11 @@ const CONFIG = {
     // L'ID du bouton a peut-être changé, ciblage large du texte "Confirmer"
     const confirmBtn = page.locator('#_bn_bt_next, button:has-text("Confirmer"), .uie_button:has-text("Confirmer")').first();
     if (await confirmBtn.isVisible()) {
-        console.log('Bouton Confirmer trouvé, clic...');
-        await confirmBtn.click();
+      console.log('Bouton Confirmer trouvé, clic...');
+      await confirmBtn.click();
     } else {
-        console.log('⚠️ Bouton Confirmer introuvable. Essai de forçage...');
-        try { await page.getByText(/Confirmer/i).click(); } catch(e) { console.log(e.message); }
+      console.log('⚠️ Bouton Confirmer introuvable. Essai de forçage...');
+      try { await page.getByText(/Confirmer/i).click(); } catch (e) { console.log(e.message); }
     }
 
     // Attente post-clic pour voir si erreur ou succès
@@ -281,7 +281,7 @@ const CONFIG = {
 
     // --- ÉTAPE PAIEMENT ---
     console.log('Ouverture du formulaire de paiement (Clic Payer)...');
-    
+
     // Le bouton 'Payer'
     const payerBtn = page.locator('.uie_button', { hasText: /Payer|Pay/i }).first();
     if (await payerBtn.isVisible()) {
@@ -294,88 +294,88 @@ const CONFIG = {
     // Wait for the Square iframe
     console.log('Attente de l\'Iframe Square CDN...');
     const squareIframeElement = await page.waitForSelector('iframe[src*="squarecdn.com"]', { timeout: 15000 }).catch(() => null);
-    
+
     if (squareIframeElement) {
-        console.log('✅ Iframe Square détecté, injection des informations bancaires...');
-        const frame = await squareIframeElement.contentFrame();
-        
-        // Remplissage infos CB (pressSequentially pour éviter que Square rate des chiffres)
-        const ccInput = frame.getByPlaceholder(/Numéro de la carte/i);
-        await ccInput.click();
-        await ccInput.pressSequentially(CONFIG.user.ccNumber, { delay: 50 }).catch(e => console.log('Erreur Numéro carte:', e.message));
-        
-        const expInput = frame.getByPlaceholder(/MM\/AA/i);
-        await expInput.click();
-        await expInput.pressSequentially(CONFIG.user.ccExpiry, { delay: 50 }).catch(e => console.log('Erreur Expiration:', e.message));
-        
-        const cvvInput = frame.getByPlaceholder(/CVV/i);
-        await cvvInput.click();
-        await cvvInput.pressSequentially(CONFIG.user.ccCvv, { delay: 50 }).catch(e => console.log('Erreur CVV:', e.message));
+      console.log('✅ Iframe Square détecté, injection des informations bancaires...');
+      const frame = await squareIframeElement.contentFrame();
 
-        // Code Postal Dynamique
-        const postalCodeInput = frame.locator('input[autocomplete="postal-code"], input[name="postalCode"]').first();
-        if (await postalCodeInput.isVisible().catch(() => false)) {
-            console.log('ℹ️ Champ de code postal dynamique détecté dans Square ! Remplissage...');
-            await postalCodeInput.click();
-            await postalCodeInput.pressSequentially(CONFIG.user.postalCode, { delay: 50 });
-        }
+      // Remplissage infos CB (pressSequentially pour éviter que Square rate des chiffres)
+      const ccInput = frame.getByPlaceholder(/Numéro de la carte/i);
+      await ccInput.click();
+      await ccInput.pressSequentially(CONFIG.user.ccNumber, { delay: 50 }).catch(e => console.log('Erreur Numéro carte:', e.message));
 
-        console.log('Vérification et remplissage des champs de facturation dans le DOM (si présents)...');
-        
-        // Fonction utilitaire pour remplir s'il est visible
-        const fillIfEmpty = async (selector, value, name) => {
-           try {
-             // IMPORTANT: filter({ state: 'visible' }) permet d'ignorer les anciens champs cachés (ex: ceux du formulaire précédent)
-             let input = page.locator(selector).filter({ state: 'visible' }).first();
-             
-             // Au cas où les champs sont carrément bâtis DANS l'iframe par Square
-             if (!(await input.isVisible())) {
-                 input = frame.locator(selector).filter({ state: 'visible' }).first();
-             }
+      const expInput = frame.getByPlaceholder(/MM\/AA/i);
+      await expInput.click();
+      await expInput.pressSequentially(CONFIG.user.ccExpiry, { delay: 50 }).catch(e => console.log('Erreur Expiration:', e.message));
 
-             if (await input.isVisible()) {
-                const currentVal = await input.inputValue();
-                if (!currentVal) {
-                    await input.fill(value);
-                    console.log(`✅ Champ ${name} rempli.`);
-                } else {
-                    console.log(`ℹ️ Champ ${name} déjà rempli.`);
-                }
-             } else {
-                 console.log(`⚠️ Champ ${name} introuvable à l'écran.`);
-             }
-           } catch(e) {
-               console.log(`❌ Erreur remplissage ${name}:`, e.message);
-           }
-        };
+      const cvvInput = frame.getByPlaceholder(/CVV/i);
+      await cvvInput.click();
+      await cvvInput.pressSequentially(CONFIG.user.ccCvv, { delay: 50 }).catch(e => console.log('Erreur CVV:', e.message));
 
-        // Facturation (sélecteurs exacts validés via aria-label de Square)
-        await fillIfEmpty('input[aria-label="Adresse ligne 1"]', CONFIG.user.address, 'Adresse');
-        await fillIfEmpty('input[aria-label="Ville"]', CONFIG.user.city, 'Ville');
-        await fillIfEmpty('input[aria-label="État"]', CONFIG.user.state, 'État');
-        await fillIfEmpty('input[aria-label="Prénom"]', CONFIG.user.firstName, 'Prénom');
-        await fillIfEmpty('input[aria-label="Nom"]', CONFIG.user.lastName, 'Nom');
+      // Code Postal Dynamique
+      const postalCodeInput = frame.locator('input[autocomplete="postal-code"], input[name="postalCode"]').first();
+      if (await postalCodeInput.isVisible().catch(() => false)) {
+        console.log('ℹ️ Champ de code postal dynamique détecté dans Square ! Remplissage...');
+        await postalCodeInput.click();
+        await postalCodeInput.pressSequentially(CONFIG.user.postalCode, { delay: 50 });
+      }
 
-        // Sélection du pays (Dropdown)
+      console.log('Vérification et remplissage des champs de facturation dans le DOM (si présents)...');
+
+      // Fonction utilitaire pour remplir s'il est visible
+      const fillIfEmpty = async (selector, value, name) => {
         try {
-            let countrySelect = page.locator('select.sq-custom-input-field, select[aria-label*="Pays"], select[autocomplete="country"]').filter({ state: 'visible' }).first();
-            if (!(await countrySelect.isVisible())) {
-                countrySelect = frame.locator('select.sq-custom-input-field, select[aria-label*="Pays"], select[autocomplete="country"]').filter({ state: 'visible' }).first();
-            }
-            if (await countrySelect.isVisible()) {
-                await countrySelect.selectOption({ label: 'Canada' }).catch(async () => {
-                    await countrySelect.selectOption('CA');
-                });
-                console.log('✅ Pays (Canada) sélectionné.');
+          // IMPORTANT: filter({ state: 'visible' }) permet d'ignorer les anciens champs cachés (ex: ceux du formulaire précédent)
+          let input = page.locator(selector).filter({ state: 'visible' }).first();
+
+          // Au cas où les champs sont carrément bâtis DANS l'iframe par Square
+          if (!(await input.isVisible())) {
+            input = frame.locator(selector).filter({ state: 'visible' }).first();
+          }
+
+          if (await input.isVisible()) {
+            const currentVal = await input.inputValue();
+            if (!currentVal) {
+              await input.fill(value);
+              console.log(`✅ Champ ${name} rempli.`);
             } else {
-                console.log('ℹ️ Menu déroulant du pays non visible ou géré différemment.');
+              console.log(`ℹ️ Champ ${name} déjà rempli.`);
             }
-        } catch(e) {
-            console.log('⚠️ Impossible de sélectionner le pays:', e.message);
+          } else {
+            console.log(`⚠️ Champ ${name} introuvable à l'écran.`);
+          }
+        } catch (e) {
+          console.log(`❌ Erreur remplissage ${name}:`, e.message);
         }
+      };
+
+      // Facturation (sélecteurs exacts validés via aria-label de Square)
+      await fillIfEmpty('input[aria-label="Adresse ligne 1"]', CONFIG.user.address, 'Adresse');
+      await fillIfEmpty('input[aria-label="Ville"]', CONFIG.user.city, 'Ville');
+      await fillIfEmpty('input[aria-label="État"]', CONFIG.user.state, 'État');
+      await fillIfEmpty('input[aria-label="Prénom"]', CONFIG.user.firstName, 'Prénom');
+      await fillIfEmpty('input[aria-label="Nom"]', CONFIG.user.lastName, 'Nom');
+
+      // Sélection du pays (Dropdown)
+      try {
+        let countrySelect = page.locator('select.sq-custom-input-field, select[aria-label*="Pays"], select[autocomplete="country"]').filter({ state: 'visible' }).first();
+        if (!(await countrySelect.isVisible())) {
+          countrySelect = frame.locator('select.sq-custom-input-field, select[aria-label*="Pays"], select[autocomplete="country"]').filter({ state: 'visible' }).first();
+        }
+        if (await countrySelect.isVisible()) {
+          await countrySelect.selectOption({ label: 'Canada' }).catch(async () => {
+            await countrySelect.selectOption('CA');
+          });
+          console.log('✅ Pays (Canada) sélectionné.');
+        } else {
+          console.log('ℹ️ Menu déroulant du pays non visible ou géré différemment.');
+        }
+      } catch (e) {
+        console.log('⚠️ Impossible de sélectionner le pays:', e.message);
+      }
 
     } else {
-        console.log('❌ Iframe Square introuvable. Le système a-t-il changé de fournisseur ?');
+      console.log('❌ Iframe Square introuvable. Le système a-t-il changé de fournisseur ?');
     }
 
     console.log('📸 Prise de photo du formulaire de paiement rempli...');
@@ -385,26 +385,26 @@ const CONFIG = {
       console.log('⚠️ DRY-RUN: Fin du script. Le bouton "Terminé" (Paiement) ne sera pas cliqué pour éviter un paiement réel.');
     } else {
       if (squareIframeElement) {
-         console.log('Validation FINALE du PAIEMENT (Recherche du bouton de confirmation)...');
-         
-         try {
-             // On s'assure de chercher spécifiquement le bouton noir "Payer" (Payer XXX $) généré par Square!
-             // L'ID #sq-pay-button est unique et évite les conflits avec les boutons cachés de Booxi (ex: bx_btn_payment)
-             const termineBtn = page.locator('#sq-pay-button');
-             await termineBtn.waitFor({ state: 'visible', timeout: 5000 });
-             
-             console.log('✅ Bouton de paiement (Payer) trouvé ! Courte attente avant le clic...');
-             await page.waitForTimeout(1000);
-             await termineBtn.click({ timeout: 5000 });
-             
-             console.log('Attente de la confirmation Square...');
-             await page.waitForTimeout(6000); 
-             console.log('✅ Paiement soumis. Vérifiez votre boîte courriel pour confirmation.');
-             await page.screenshot({ path: `success_payment_${dateStr}.png`, fullPage: true });
-         } catch(e) {
-             console.log('❌ Bouton Terminé introuvable ou inactif (grisé). Erreur:', e.message);
-             await page.screenshot({ path: `error_payment_${dateStr}.png` });
-         }
+        console.log('Validation FINALE du PAIEMENT (Recherche du bouton de confirmation)...');
+
+        try {
+          // On s'assure de chercher spécifiquement le bouton noir "Payer" (Payer XXX $) généré par Square!
+          // L'ID #sq-pay-button est unique et évite les conflits avec les boutons cachés de Booxi (ex: bx_btn_payment)
+          const termineBtn = page.locator('#sq-pay-button');
+          await termineBtn.waitFor({ state: 'visible', timeout: 5000 });
+
+          console.log('✅ Bouton de paiement (Payer) trouvé ! Courte attente avant le clic...');
+          await page.waitForTimeout(1000);
+          await termineBtn.click({ timeout: 5000 });
+
+          console.log('Attente de la confirmation Square...');
+          await page.waitForTimeout(6000);
+          console.log('✅ Paiement soumis. Vérifiez votre boîte courriel pour confirmation.');
+          await page.screenshot({ path: `success_payment_${dateStr}.png`, fullPage: true });
+        } catch (e) {
+          console.log('❌ Bouton Terminé introuvable ou inactif (grisé). Erreur:', e.message);
+          await page.screenshot({ path: `error_payment_${dateStr}.png` });
+        }
       }
     }
   } catch (error) {
