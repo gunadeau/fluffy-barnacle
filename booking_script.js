@@ -308,7 +308,14 @@ const CONFIG = {
         // Fonction utilitaire pour remplir s'il est visible
         const fillIfEmpty = async (selector, value, name) => {
            try {
-             const input = page.locator(selector).first();
+             // IMPORTANT: filter({ state: 'visible' }) permet d'ignorer les anciens champs cachés (ex: ceux du formulaire précédent)
+             let input = page.locator(selector).filter({ state: 'visible' }).first();
+             
+             // Au cas où les champs sont carrément bâtis DANS l'iframe par Square
+             if (!(await input.isVisible())) {
+                 input = frame.locator(selector).filter({ state: 'visible' }).first();
+             }
+
              if (await input.isVisible()) {
                 const currentVal = await input.inputValue();
                 if (!currentVal) {
@@ -318,19 +325,37 @@ const CONFIG = {
                     console.log(`ℹ️ Champ ${name} déjà rempli.`);
                 }
              } else {
-                 console.log(`⚠️ Champ ${name} non visible.`);
+                 console.log(`⚠️ Champ ${name} introuvable à l'écran.`);
              }
            } catch(e) {
                console.log(`❌ Erreur remplissage ${name}:`, e.message);
            }
         };
 
-        // Facturation (sélecteurs exacts trouvés lors de l'exploration)
-        await fillIfEmpty("input[placeholder*='Adresse']", CONFIG.user.address, 'Adresse');
-        await fillIfEmpty("input[placeholder*='Ville']", CONFIG.user.city, 'Ville');
-        await fillIfEmpty("input[placeholder*='tal']", CONFIG.user.state, 'État/Code Postal');
-        await fillIfEmpty("input[placeholder*='Prénom']", CONFIG.user.firstName, 'Prénom');
-        await fillIfEmpty("input[placeholder*='Nom']", CONFIG.user.lastName, 'Nom');
+        // Facturation (sélecteurs exacts validés via aria-label de Square)
+        await fillIfEmpty('input[aria-label="Adresse ligne 1"]', CONFIG.user.address, 'Adresse');
+        await fillIfEmpty('input[aria-label="Ville"]', CONFIG.user.city, 'Ville');
+        await fillIfEmpty('input[aria-label="État"]', CONFIG.user.state, 'État');
+        await fillIfEmpty('input[aria-label="Prénom"]', CONFIG.user.firstName, 'Prénom');
+        await fillIfEmpty('input[aria-label="Nom"]', CONFIG.user.lastName, 'Nom');
+
+        // Sélection du pays (Dropdown)
+        try {
+            let countrySelect = page.locator('select.sq-custom-input-field, select[aria-label*="Pays"], select[autocomplete="country"]').filter({ state: 'visible' }).first();
+            if (!(await countrySelect.isVisible())) {
+                countrySelect = frame.locator('select.sq-custom-input-field, select[aria-label*="Pays"], select[autocomplete="country"]').filter({ state: 'visible' }).first();
+            }
+            if (await countrySelect.isVisible()) {
+                await countrySelect.selectOption({ label: 'Canada' }).catch(async () => {
+                    await countrySelect.selectOption('CA');
+                });
+                console.log('✅ Pays (Canada) sélectionné.');
+            } else {
+                console.log('ℹ️ Menu déroulant du pays non visible ou géré différemment.');
+            }
+        } catch(e) {
+            console.log('⚠️ Impossible de sélectionner le pays:', e.message);
+        }
 
     } else {
         console.log('❌ Iframe Square introuvable. Le système a-t-il changé de fournisseur ?');
@@ -343,9 +368,9 @@ const CONFIG = {
       console.log('⚠️ DRY-RUN: Fin du script. Le bouton "Terminé" (Paiement) ne sera pas cliqué pour éviter un paiement réel.');
     } else {
       if (squareIframeElement) {
-         console.log('Validation FINALE du PAIEMENT (Clic Terminé)...');
+         console.log('Validation FINALE du PAIEMENT (Clic Payer)...');
          
-         const termineBtn = page.getByRole('button', { name: /Terminé|Pay|Confirm|Submit/i }).first();
+         const termineBtn = page.locator('#sq-pay-button, button:has-text("Payer"), button:has-text("Terminé")').first();
          if (await termineBtn.isVisible()) {
             await termineBtn.click();
             await page.waitForTimeout(6000); // Attendre la confirmation Square
