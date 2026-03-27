@@ -46,10 +46,32 @@ const CONFIG = {
 
     await page.waitForSelector('.uie_vListItem', { timeout: 10000 });
 
-    // 2. Sélectionner le service
+    // 2. Sélectionner la catégorie (Nouveau format Booxi) et le service
+    console.log(`Recherche de la catégorie (ex: Services Généraux)...`);
+    // On essaie d'abord de trouver la catégorie "Services Généraux" ou d'autres catégories pour les dérouler
+    const categoryLocator = page.locator('.uie_vListItem', { hasText: /Services Généraux/i }).first();
+    if (await categoryLocator.isVisible()) {
+      console.log('Catégorie trouvée, clic pour dérouler...');
+      await categoryLocator.click();
+      await page.waitForTimeout(1000); // Laisse le temps à l'animation de se terminer
+    }
+
     console.log(`Recherche du service : ${CONFIG.targetService}...`);
-    const serviceLocator = page.locator('.uie_vListItem', { hasText: CONFIG.targetService }).first();
-    if (await serviceLocator.count() === 0) throw new Error(`Service "${CONFIG.targetService}" introuvable.`);
+    // On peut avoir besoin de cibler un élément plus profond ou général si la classe a changé
+    const serviceLocator = page.locator('.uie_vListItem, .bnx_svc_list_item', { hasText: CONFIG.targetService }).first();
+    
+    // Attendre que le service apparaisse potentiellement (si l'API charge des données)
+    try {
+      await serviceLocator.waitFor({ state: 'visible', timeout: 5000 });
+    } catch(e) {
+      // Ignorer l'erreur de timeout ici pour laisser le throw classique faire son travail
+    }
+
+    if (await serviceLocator.count() === 0 || !(await serviceLocator.isVisible())) {
+       // Si on ne trouve toujours pas, on fait un screenshot pour débugger
+       await page.screenshot({ path: 'erreur_service_introuvable.png' });
+       throw new Error(`Service "${CONFIG.targetService}" introuvable ou invisible. Vérifiez si la catégorie est correcte.`);
+    }
     await serviceLocator.click();
     console.log('Service sélectionné.');
 
