@@ -90,9 +90,9 @@ const CONFIG = {
             try { await dayElement.click({ force: true }); } catch (e) { continue; }
             await page.waitForTimeout(1000);
 
-            // Recherche heure 18:00 (Stricte)
             // Regex: Start with 18:00 to avoid partial matches like "17:00 - 18:00"
-            const targetTime = `${CONFIG.targetHour}:${CONFIG.targetMinute.toString().padStart(2, '0')}`;
+            const targetHourStr = CONFIG.targetHour.toString().padStart(2, '0');
+            const targetTime = `${targetHourStr}:${CONFIG.targetMinute.toString().padStart(2, '0')}`;
             const timeSlot = page.locator('.intv_row', { hasText: new RegExp(`^${targetTime}`) }).first();
 
             if (await timeSlot.isVisible()) {
