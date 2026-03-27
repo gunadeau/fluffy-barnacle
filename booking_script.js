@@ -298,22 +298,32 @@ const CONFIG = {
 
         console.log('Vérification et remplissage des champs de facturation dans le DOM (si présents)...');
         
-        // Fonction utilitaire pour remplir s'il est visible et vide
-        const fillIfEmpty = async (placeholder, value) => {
+        // Fonction utilitaire pour remplir s'il est visible
+        const fillIfEmpty = async (selector, value, name) => {
            try {
-             // Utilisation d'une regex pour accommoder des variations subtiles
-             const input = page.getByPlaceholder(new RegExp(placeholder, 'i')).first();
+             const input = page.locator(selector).first();
              if (await input.isVisible()) {
                 const currentVal = await input.inputValue();
-                if (!currentVal) await input.fill(value);
+                if (!currentVal) {
+                    await input.fill(value);
+                    console.log(`✅ Champ ${name} rempli.`);
+                } else {
+                    console.log(`ℹ️ Champ ${name} déjà rempli.`);
+                }
+             } else {
+                 console.log(`⚠️ Champ ${name} non visible.`);
              }
-           } catch(e) {}
+           } catch(e) {
+               console.log(`❌ Erreur remplissage ${name}:`, e.message);
+           }
         };
 
-        // Facturation
-        await fillIfEmpty('Adresse', CONFIG.user.address);
-        await fillIfEmpty('Ville', CONFIG.user.city);
-        await fillIfEmpty('État', CONFIG.user.state);
+        // Facturation (sélecteurs exacts trouvés lors de l'exploration)
+        await fillIfEmpty("input[placeholder*='Adresse']", CONFIG.user.address, 'Adresse');
+        await fillIfEmpty("input[placeholder*='Ville']", CONFIG.user.city, 'Ville');
+        await fillIfEmpty("input[placeholder*='tal']", CONFIG.user.state, 'État/Code Postal');
+        await fillIfEmpty("input[placeholder*='Prénom']", CONFIG.user.firstName, 'Prénom');
+        await fillIfEmpty("input[placeholder*='Nom']", CONFIG.user.lastName, 'Nom');
 
     } else {
         console.log('❌ Iframe Square introuvable. Le système a-t-il changé de fournisseur ?');
