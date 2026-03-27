@@ -299,10 +299,26 @@ const CONFIG = {
         console.log('✅ Iframe Square détecté, injection des informations bancaires...');
         const frame = await squareIframeElement.contentFrame();
         
-        // Remplissage infos CB
-        await frame.getByPlaceholder(/Numéro de la carte/i).fill(CONFIG.user.ccNumber).catch(e => console.log('Erreur Numéro carte:', e.message));
-        await frame.getByPlaceholder(/MM\/AA/i).fill(CONFIG.user.ccExpiry).catch(e => console.log('Erreur Expiration:', e.message));
-        await frame.getByPlaceholder(/CVV/i).fill(CONFIG.user.ccCvv).catch(e => console.log('Erreur CVV:', e.message));
+        // Remplissage infos CB (pressSequentially pour éviter que Square rate des chiffres)
+        const ccInput = frame.getByPlaceholder(/Numéro de la carte/i);
+        await ccInput.click();
+        await ccInput.pressSequentially(CONFIG.user.ccNumber, { delay: 50 }).catch(e => console.log('Erreur Numéro carte:', e.message));
+        
+        const expInput = frame.getByPlaceholder(/MM\/AA/i);
+        await expInput.click();
+        await expInput.pressSequentially(CONFIG.user.ccExpiry, { delay: 50 }).catch(e => console.log('Erreur Expiration:', e.message));
+        
+        const cvvInput = frame.getByPlaceholder(/CVV/i);
+        await cvvInput.click();
+        await cvvInput.pressSequentially(CONFIG.user.ccCvv, { delay: 50 }).catch(e => console.log('Erreur CVV:', e.message));
+
+        // Code Postal Dynamique
+        const postalCodeInput = frame.locator('input[autocomplete="postal-code"], input[name="postalCode"]').first();
+        if (await postalCodeInput.isVisible().catch(() => false)) {
+            console.log('ℹ️ Champ de code postal dynamique détecté dans Square ! Remplissage...');
+            await postalCodeInput.click();
+            await postalCodeInput.pressSequentially(CONFIG.user.postalCode, { delay: 50 });
+        }
 
         console.log('Vérification et remplissage des champs de facturation dans le DOM (si présents)...');
         
