@@ -368,17 +368,24 @@ const CONFIG = {
       console.log('⚠️ DRY-RUN: Fin du script. Le bouton "Terminé" (Paiement) ne sera pas cliqué pour éviter un paiement réel.');
     } else {
       if (squareIframeElement) {
-         console.log('Validation FINALE du PAIEMENT (Clic Payer)...');
+         console.log('Validation FINALE du PAIEMENT (Recherche du bouton de confirmation)...');
          
-         const termineBtn = page.locator('#sq-pay-button, button:has-text("Payer"), button:has-text("Terminé")').first();
-         if (await termineBtn.isVisible()) {
-            await termineBtn.click();
-            await page.waitForTimeout(6000); // Attendre la confirmation Square
-            console.log('✅ Paiement soumis. Vérifiez votre boîte courriel pour confirmation.');
-            await page.screenshot({ path: `success_payment_${dateStr}.png`, fullPage: true });
-         } else {
-            console.log('❌ Bouton Terminé introuvable. Impossible de soumettre le paiement.');
-            await page.screenshot({ path: `error_payment_${dateStr}.png` });
+         try {
+             // On s'assure de chercher spécifiquement le bouton noir "Payer" (Payer XXX $) généré par Square!
+             // On exclut le bouton "Terminé" de la fenêtre d'arrière-plan.
+             const termineBtn = page.locator('#sq-pay-button, button:has-text("Payer")').filter({ state: 'visible' }).first();
+             await termineBtn.waitFor({ state: 'visible', timeout: 5000 });
+             
+             console.log('✅ Bouton de paiement (Payer) trouvé ! Tentative de clic...');
+             await termineBtn.click({ timeout: 5000 });
+             
+             console.log('Attente de la confirmation Square...');
+             await page.waitForTimeout(6000); 
+             console.log('✅ Paiement soumis. Vérifiez votre boîte courriel pour confirmation.');
+             await page.screenshot({ path: `success_payment_${dateStr}.png`, fullPage: true });
+         } catch(e) {
+             console.log('❌ Bouton Terminé introuvable ou inactif (grisé). Erreur:', e.message);
+             await page.screenshot({ path: `error_payment_${dateStr}.png` });
          }
       }
     }
