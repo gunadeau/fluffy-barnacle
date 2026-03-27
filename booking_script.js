@@ -11,7 +11,13 @@ const CONFIG = {
     firstName: process.env.USER_FIRST_NAME || 'Guillaume',
     lastName: process.env.USER_LAST_NAME || 'Nadeau',
     phone: process.env.USER_PHONE || '418-473-8191',
-    email: process.env.USER_EMAIL || 'gunadeau@hotmail.com'
+    email: process.env.USER_EMAIL || 'gunadeau@hotmail.com',
+    ccNumber: process.env.USER_CC_NUMBER || '4242424242424242',
+    ccExpiry: process.env.USER_CC_EXPIRY || '12/26',
+    ccCvv: process.env.USER_CC_CVV || '123',
+    address: process.env.USER_ADDRESS || '123 Rue Principale',
+    city: process.env.USER_CITY || 'Quebec',
+    state: process.env.USER_STATE || 'QC'
   },
   // Si DRY_RUN est défini à 'false', on passe en mode réel. Sinon, par défaut true (sécurité).
   dryRun: process.env.DRY_RUN === 'false' ? false : true
@@ -226,27 +232,90 @@ const CONFIG = {
     console.log(`📸 Prise de photo de preuve : ${screenshotName}`);
     await page.screenshot({ path: screenshotName, fullPage: true });
 
-    if (CONFIG.dryRun) {
-      console.log('⚠️ DRY-RUN: Fin. (Injection effectuée)');
-      const confirmBtn = page.locator('#_bn_bt_next');
-      if (await confirmBtn.isVisible()) console.log('✅ Bouton "Confirmer" visible.');
+    console.log('Passage à la page de confirmation / paiement...');
+    const confirmBtn = page.locator('#_bn_bt_next');
+    if (await confirmBtn.isVisible()) await confirmBtn.click();
+
+    // Attente post-clic pour voir si erreur ou succès
+    await page.waitForTimeout(4000);
+
+    // Vérifier s'il y a un message d'erreur de politique
+    const errorMsg = page.locator('[bx_lang="cancel_policy_check_err"]');
+    if (await errorMsg.isVisible()) {
+      console.error('❌ ÉCHEC : Le site refuse toujours malgré le hack JS.');
+      await page.screenshot({ path: `failure_hack_js_${dateStr}.png` });
+      throw new Error('Erreur de politique - impossible de continuer.');
     } else {
-      console.log('Validation FINALE (Clic Confirmer)...');
-      const confirmBtn = page.locator('#_bn_bt_next');
-      await confirmBtn.click();
+      console.log('✅ SUCCÈS : Injection JS réussie, passage au paiement.');
+    }
 
-      // Attente post-clic pour voir si erreur ou succès
-      await page.waitForTimeout(5000);
+    // --- ÉTAPE PAIEMENT ---
+    console.log('Ouverture du formulaire de paiement (Clic Payer)...');
+    
+    // Le bouton 'Payer'
+    const payerBtn = page.locator('.uie_button', { hasText: /Payer|Pay/i }).first();
+    if (await payerBtn.isVisible()) {
+      await payerBtn.click();
+      await page.waitForTimeout(3000);
+    } else {
+      console.log('Bouton Payer introuvable par texte, tentative du bouton générique...');
+    }
 
-      // Vérifier s'il y a un message d'erreur de politique
-      const errorMsg = page.locator('[bx_lang="cancel_policy_check_err"]');
-      if (await errorMsg.isVisible()) {
-        console.error('❌ ÉCHEC : Le site refuse toujours malgré le hack JS.');
-        await page.screenshot({ path: `failure_hack_js_${dateStr}.png` });
-      } else {
-        console.log('✅ SUCCÈS : Injection JS réussie ! Réservation soumise.');
-        // Photo finale après succès optionnelle
-        await page.screenshot({ path: `success_final_${dateStr}.png` });
+    // Wait for the Square iframe
+    console.log('Attente de l\'Iframe Square CDN...');
+    const squareIframeElement = await page.waitForSelector('iframe[src*="squarecdn.com"]', { timeout: 15000 }).catch(() => null);
+    
+    if (squareIframeElement) {
+        console.log('✅ Iframe Square détecté, injection des informations bancaires...');
+        const frame = await squareIframeElement.contentFrame();
+        
+        // Remplissage infos CB
+        await frame.getByPlaceholder(/Numéro de la carte/i).fill(CONFIG.user.ccNumber).catch(e => console.log('Erreur Numéro carte:', e.message));
+        await frame.getByPlaceholder(/MM\/AA/i).fill(CONFIG.user.ccExpiry).catch(e => console.log('Erreur Expiration:', e.message));
+        await frame.getByPlaceholder(/CVV/i).fill(CONFIG.user.ccCvv).catch(e => console.log('Erreur CVV:', e.message));
+
+        console.log('Vérification et remplissage des champs de facturation dans le DOM (si présents)...');
+        
+        // Fonction utilitaire pour remplir s'il est visible et vide
+        const fillIfEmpty = async (placeholder, value) => {
+           try {
+             // Utilisation d'une regex pour accommoder des variations subtiles
+             const input = page.getByPlaceholder(new RegExp(placeholder, 'i')).first();
+             if (await input.isVisible()) {
+                const currentVal = await input.inputValue();
+                if (!currentVal) await input.fill(value);
+             }
+           } catch(e) {}
+        };
+
+        // Facturation
+        await fillIfEmpty('Adresse', CONFIG.user.address);
+        await fillIfEmpty('Ville', CONFIG.user.city);
+        await fillIfEmpty('État', CONFIG.user.state);
+
+    } else {
+        console.log('❌ Iframe Square introuvable. Le système a-t-il changé de fournisseur ?');
+    }
+
+    console.log('📸 Prise de photo du formulaire de paiement rempli...');
+    await page.screenshot({ path: `payment_form_filled_${dateStr}.png`, fullPage: true });
+
+    if (CONFIG.dryRun) {
+      console.log('⚠️ DRY-RUN: Fin du script. Le bouton "Terminé" (Paiement) ne sera pas cliqué pour éviter un paiement réel.');
+    } else {
+      if (squareIframeElement) {
+         console.log('Validation FINALE du PAIEMENT (Clic Terminé)...');
+         
+         const termineBtn = page.getByRole('button', { name: /Terminé|Pay|Confirm|Submit/i }).first();
+         if (await termineBtn.isVisible()) {
+            await termineBtn.click();
+            await page.waitForTimeout(6000); // Attendre la confirmation Square
+            console.log('✅ Paiement soumis. Vérifiez votre boîte courriel pour confirmation.');
+            await page.screenshot({ path: `success_payment_${dateStr}.png`, fullPage: true });
+         } else {
+            console.log('❌ Bouton Terminé introuvable. Impossible de soumettre le paiement.');
+            await page.screenshot({ path: `error_payment_${dateStr}.png` });
+         }
       }
     }
   } catch (error) {

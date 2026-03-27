@@ -8,6 +8,7 @@ Le script Node.js/Playwright est désormais capable de :
 *   Scanner le calendrier pour trouver le prochain Jeudi à l'heure demandée.
 *   Remplir automatiquement le formulaire client.
 *   Contourner la validation de la politique de confidentialité (Injection JS).
+*   Remplir les informations de paiement par carte de crédit (Iframe Square).
 *   Confirmer la réservation avec succès.
 *   Prendre une photo de preuve (avant et après).
 
@@ -34,4 +35,9 @@ Après l'exécution du script par GitHub :
 3.  Cliquez sur `booking-screenshots` pour télécharger le ZIP des photos.
 
 ## 🔐 Configuration (Secrets)
-Secrets configurés : `USER_FIRST_NAME`, `USER_LAST_NAME`, `USER_EMAIL`, `USER_PHONE`.
+Secrets obligatoires : `USER_FIRST_NAME`, `USER_LAST_NAME`, `USER_EMAIL`, `USER_PHONE`.
+**Nouveaux secrets (Paiement Booxi/Square) :**
+*   `USER_CC_NUMBER` : Numéro de la carte de crédit
+*   `USER_CC_EXPIRY` : Date d'expiration (format MM/AA)
+*   `USER_CC_CVV` : Code de sécurité (3 chiffres)
+**Secrets optionnels (Facturation) :** `USER_ADDRESS`, `USER_CITY`, `USER_STATE`.
